@@ -269,11 +269,14 @@ plt.show()
 如果本代码对您的研究有帮助，请引用:
 
 ```bibtex
-@inproceedings{yourpaper2022,
-  title={Recurrent Model-Free RL Can Be a Strong Baseline for Many POMDPs},
-  author={Your Name and Others},
-  booktitle={International Conference on Machine Learning},
-  year={2022}
+@inproceedings{lang2025grsn,
+  title     = {GRSN: Gated Recurrent Spiking Neurons for POMDPs and MARL},
+  author    = {Lang, Qin and Ziming Wang and Runhao Jiang and Rui Yan and Huajin Tang},
+  booktitle = {Proceedings of the AAAI Conference on Artificial Intelligence},
+  series    = {AAAI'25},
+  year      = {2025},
+  publisher = {AAAI Press},
+  location  = {Philadelphia, Pennsylvania, USA}
 }
 ```
 
