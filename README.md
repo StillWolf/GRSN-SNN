@@ -21,7 +21,7 @@ This repository implements **GRSN (Gate Recurrent Spiking Neuron)**, a spiking n
 |-------------|-------------|
 | LIF | Leaky Integrate-and-Fire neuron |
 | RecurrentLIF | LIF with recurrent connections and gating |
-| GRSNwoTAP | GRSN without temporal attention mechanism |
+| GRSNwoTAP | GRSN without Temporal Alignment Paradigm |
 | AdaptiveLIF | LIF with adaptive threshold |
 | LIFwoTAP | Simplified LIF without TAP |
 

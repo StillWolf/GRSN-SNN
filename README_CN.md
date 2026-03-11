@@ -21,7 +21,7 @@
 |-----------|------|
 | LIF | 泄漏积分发放神经元 |
 | RecurrentLIF | 带循环连接和门控的LIF |
-| GRSNwoTAP | 无时间注意力机制的GRSN |
+| GRSNwoTAP | 无时序对齐范式的GRSN |
 | AdaptiveLIF | 带自适应阈值的LIF |
 | LIFwoTAP | 简化版LIF，无TAP |
 
