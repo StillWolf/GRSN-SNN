@@ -1,0 +1,39 @@
+# 对应 SMAC map "8m" 的 QMIX + GRSN 配置
+# 默认值来自 pymarl2 的 vanilla QMIX（论文 arXiv:2404.15597 未单独重写）
+
+env:
+  map_name: 8m
+  n_agents: 8        # MockSMAC 用；真实 SMAC 会被 env.get_env_info() 覆盖
+  n_actions: 14
+  obs_dim: 80
+  state_dim: 168
+  episode_limit: 60
+
+agent:
+  rnn_type: GRSN     # gru / GRSN / LIF / GRSNwoTAP / LIFwoTAP
+  rnn_hidden_size: 64
+  obs_embed_size: 64
+  num_layers: 1
+
+mixer:
+  embed_dim: 32
+  hypernet_layers: 2
+  hypernet_embed: 64
+
+train:
+  lr: 5.0e-4
+  gamma: 0.99
+  grad_clip: 10.0
+  batch_size: 32            # 单位：episode
+  buffer_size: 5000         # 单位：episode
+  target_update_interval: 200  # 单位：训练迭代次数
+  num_env_steps: 10000000   # 论文 10M；冒烟测试请用 --num_env_steps 覆盖
+
+explore:
+  epsilon_start: 1.0
+  epsilon_end: 0.05
+  epsilon_anneal_time: 50000  # env steps
+
+eval:
+  interval_env_steps: 20000
+  num_episodes: 32

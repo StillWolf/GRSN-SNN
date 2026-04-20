@@ -1,0 +1,40 @@
+# SMAC map "2s3z"（5 个异构单位）的 QMIX + GRSN 配置
+# 注意：2s3z 的 units 不同构（2 个 stalker + 3 个 zealot），但 pymarl2 的默认
+# QMIX 仍对所有 agent 共享权重，性能够用；若要 per-type 共享需扩展 AgentNetwork。
+
+env:
+  map_name: 2s3z
+  n_agents: 5
+  n_actions: 11
+  obs_dim: 80        # 真实值需 smac env.get_obs_size() 确认
+  state_dim: 120     # 真实值需 smac env.get_state_size() 确认
+  episode_limit: 120
+
+agent:
+  rnn_type: GRSN
+  rnn_hidden_size: 64
+  obs_embed_size: 64
+  num_layers: 1
+
+mixer:
+  embed_dim: 32
+  hypernet_layers: 2
+  hypernet_embed: 64
+
+train:
+  lr: 5.0e-4
+  gamma: 0.99
+  grad_clip: 10.0
+  batch_size: 32
+  buffer_size: 5000
+  target_update_interval: 200
+  num_env_steps: 10000000
+
+explore:
+  epsilon_start: 1.0
+  epsilon_end: 0.05
+  epsilon_anneal_time: 50000
+
+eval:
+  interval_env_steps: 20000
+  num_episodes: 32
