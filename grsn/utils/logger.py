@@ -6,7 +6,8 @@ import time
 import datetime
 import dateutil.tz
 import tempfile
-from collections import OrderedDict, Set
+from collections import OrderedDict
+from collections.abc import Set
 
 try:
     from torch.utils.tensorboard import SummaryWriter
