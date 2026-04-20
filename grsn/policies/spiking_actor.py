@@ -145,7 +145,8 @@ class Actor_SNN(nn.Module):
         prev_action = ptu.zeros((1, self.action_dim)).float()
         reward = ptu.zeros((1, 1)).float()
 
-        hidden_state = ptu.zeros((self.num_layers, 1, self.rnn_hidden_size)).float()
+        state_size = self.rnn.state_size_per_layer
+        hidden_state = ptu.zeros((self.num_layers, 1, state_size)).float()
         internal_state = hidden_state
 
         return prev_action, reward, internal_state
