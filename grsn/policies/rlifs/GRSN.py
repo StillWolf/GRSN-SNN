@@ -7,6 +7,12 @@
 - 可学习 β（sigmoid 参数化保证 0<β<1）
 - ATan 代理梯度 α=2
 - TAP 对齐：time_step=1
+
+状态张量布局：
+    state: (B, 3*hidden_size) = concat([h, c, spike_prev], dim=-1)
+    其中 h 是膜电位，c 是门控电流，spike_prev 是上一步脉冲 o_{t-1}。
+    使用外部 state 是为了让门控递归在推理阶段（每次 act() 调用 T_mdp=1）
+    也能跨 MDP step 保留——否则 spike_prev 总是 0，GRSN 的门控失效。
 """
 import math
 import torch
@@ -17,13 +23,7 @@ from ._base import RecurrentSpikingWrapper
 
 
 class GRSNCell(nn.Module):
-    """单层 GRSN cell。
-
-    状态：
-        v: 膜电位 u
-        c: 门控输入电流 c
-        spike_prev: 上一子步的脉冲 o_{t-1}（门控输入）
-    """
+    """单层 GRSN cell。状态完全外部化（h, c, spike_prev 拼接在 state 张量里）。"""
 
     def __init__(self, input_size, hidden_size,
                  v_threshold=1.0, surrogate_function=None):
@@ -39,13 +39,14 @@ class GRSNCell(nn.Module):
         self.input_gate = nn.Linear(hidden_size, hidden_size)
         # 当前输入到电流的投影
         self.input_proj = nn.Linear(input_size, hidden_size)
-        # 可学习 β：β = sigmoid(beta_raw)
-        # 初始化让 β ≈ 0.5（与论文 LIF baseline 一致），即 beta_raw ≈ 0
+        # 可学习 β：β = sigmoid(beta_raw)，beta_raw=0 → β=0.5（与 LIF baseline 对齐）
         self.beta_raw = nn.Parameter(torch.zeros(hidden_size))
-
-        self.c = None
-        self.spike_prev = None
         self.reset_parameters()
+
+    @property
+    def state_size(self):
+        """wrapper 用来分配 state 张量的第三维大小。"""
+        return 3 * self.hidden_size
 
     def reset_parameters(self):
         sqrt_k = math.sqrt(1.0 / self.hidden_size)
@@ -53,38 +54,43 @@ class GRSNCell(nn.Module):
             nn.init.uniform_(layer.weight, -sqrt_k, sqrt_k)
             nn.init.uniform_(layer.bias, -sqrt_k, sqrt_k)
 
-    def reset(self):
-        """被 spikingjelly.functional.reset_net 调用。"""
-        self.c = None
-        self.spike_prev = None
+    def forward(self, x, state):
+        """单步前向。
 
-    def _maybe_init_state(self, batch_size, device, dtype):
-        if self.c is None:
-            self.c = torch.zeros(batch_size, self.hidden_size, device=device, dtype=dtype)
-            self.spike_prev = torch.zeros_like(self.c)
+        Args:
+            x: (B, input_size)
+            state: (B, 3*hidden_size) = concat([h, c, spike_prev])
 
-    def forward(self, x, h):
-        B = x.shape[0]
-        self._maybe_init_state(B, x.device, x.dtype)
+        Returns:
+            new_state: (B, 3*hidden_size) 下一步状态
+            spike: (B, hidden_size) 本步脉冲 o_t
+        """
+        H = self.hidden_size
+        h = state[:, 0:H]
+        c = state[:, H:2 * H]
+        spike_prev = state[:, 2 * H:3 * H]
 
-        # Eq.17: 门控由 o_{t-1} 驱动
-        F_gate = torch.sigmoid(self.forget_gate(self.spike_prev))
-        I_gate = torch.relu(self.input_gate(self.spike_prev))
-        self.c = F_gate * self.c + (1.0 - F_gate) * I_gate
+        # Eq.17：门控由 o_{t-1} 驱动
+        F_gate = torch.sigmoid(self.forget_gate(spike_prev))
+        I_gate = torch.relu(self.input_gate(spike_prev))
+        c_new = F_gate * c + (1.0 - F_gate) * I_gate
 
-        # 当前输入投影 + 门控电流 → 进入 LIF 积分
-        current = self.input_proj(x) + self.c
+        # 当前输入投影 + 门控电流
+        current = self.input_proj(x) + c_new
         beta = torch.sigmoid(self.beta_raw)
         u = beta * h + (1.0 - beta) * current
 
+        # 发放 + 软复位（Eq.16）
         spike = self.surrogate_function(u - self.v_threshold)
-        u_reset = u - spike * self.v_threshold
+        h_new = u - spike * self.v_threshold
 
-        self.spike_prev = spike
-        return u_reset, spike
+        new_state = torch.cat([h_new, c_new, spike], dim=-1)
+        return new_state, spike
 
 
 class GRSNNode(RecurrentSpikingWrapper):
+    """GRSN with TAP：time_step=1，软复位，Eq.17 门控 o_{t-1}，可学习 β。"""
+
     def __init__(self, input_size, hidden_size, num_layers):
         super().__init__(
             cell_cls=GRSNCell,
