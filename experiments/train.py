@@ -2,13 +2,13 @@
 Unified training entry point for GRSN.
 
 Supports:
-- Model types: RNN (GRU/LSTM), SNN (LIF/RecurrentLIF/GRSNwoTAP), MLP
+- Model types: RNN (GRU/LSTM), SNN (LIF/LIFwoTAP/GRSN/GRSNwoTAP), MLP
 - Algorithms: TD3, SAC, SAC-Discrete
 - Environments: POMDP, Meta-RL, Credit Assignment, etc.
 
 Example usage:
     python experiments/train.py --env Pendulum-V-v0 --model_type rnn --encoder gru --algo sac --seed 0
-    python experiments/train.py --env Catch-5-v0 --model_type snn --snn_type RecurrentLIF --algo sacd --seed 0
+    python experiments/train.py --env Pendulum-V-v0 --model_type snn --snn_type GRSN --algo td3 --seed 0
 """
 
 import os
@@ -263,8 +263,8 @@ def main():
     parser.add_argument('--model_type', type=str, default='rnn',
                         choices=['mlp', 'rnn', 'snn'],
                         help='Type of model to use')
-    parser.add_argument('--snn_type', type=str, default='RecurrentLIF',
-                        choices=['LIF', 'RecurrentLIF', 'GRSNwoTAP', 'AdaptiveLIF', 'LIFwoTAP'],
+    parser.add_argument('--snn_type', type=str, default='GRSN',
+                        choices=['LIF', 'LIFwoTAP', 'GRSN', 'GRSNwoTAP'],
                         help='Type of SNN neuron (only for model_type=snn)')
     parser.add_argument('--encoder', type=str, default='gru',
                         choices=['gru', 'lstm'],
