@@ -4,26 +4,27 @@
 [![PyTorch](https://img.shields.io/badge/PyTorch-1.9+-red.svg)](https://pytorch.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-This repository implements **GRSN (Gate Recurrent Spiking Neuron)**, a spiking neural network architecture for reinforcement learning in partially observable environments (POMDPs). This work is based on research extending recurrent model-free RL methods with bio-inspired spiking neurons.
+This repository implements the POMDP portion of **GRSN: Gated Recurrent Spiking Neurons for POMDPs and MARL** (Qin et al., AAAI 2025, [arXiv:2404.15597](https://arxiv.org/abs/2404.15597)). The MARL portion (QMIX on SMAC) is not yet implemented — see [docs/MARL_EXTENSION.md](docs/MARL_EXTENSION.md) for the planned integration.
+
+The architectural scaffolding is adapted from [pomdp-baselines](https://github.com/twni2016/pomdp-baselines) (Ni et al., ICML 2022).
 
 ## Overview
 
 ### Key Features
 
-- **Multiple Model Types**: Supports RNN (GRU/LSTM), SNN (LIF/RecurrentLIF/GRSNwoTAP/AdaptiveLIF), and MLP baselines
+- **Multiple Model Types**: Supports RNN (GRU/LSTM), SNN (LIF/LIFwoTAP/GRSN/GRSNwoTAP), and MLP baselines
 - **Unified Training Interface**: Single entry point for all experiments via `experiments/train.py`
 - **Comprehensive Environments**: POMDP benchmarks, Meta-RL tasks, and Credit Assignment problems
 - **Multiple RL Algorithms**: TD3, SAC, and SAC-Discrete
 
 ### SNN Neuron Types
 
-| Neuron Type | Description |
-|-------------|-------------|
-| LIF | Leaky Integrate-and-Fire neuron |
-| RecurrentLIF | LIF with recurrent connections and gating |
-| GRSNwoTAP | GRSN without Temporal Alignment Paradigm |
-| AdaptiveLIF | LIF with adaptive threshold |
-| LIFwoTAP | Simplified LIF without TAP |
+| Neuron Type | Time steps | Rate coding | Description |
+|-------------|------------|-------------|-------------|
+| `LIF` | 1 | No | Baseline LIF with TAP: hard reset, fixed β=0.5, no gates |
+| `LIFwoTAP` | 4 | Yes | Same LIF baseline but with T=4 rate coding (no TAP) |
+| `GRSN` | 1 | No | **Paper's main model**: Eq.17 gated input current driven by o_{t-1}, learnable β, soft reset, TAP-aligned (T=1) |
+| `GRSNwoTAP` | 4 | Yes | GRSN without TAP: T=4 rate coding ablation |
 
 ## Installation
 
@@ -36,8 +37,8 @@ This repository implements **GRSN (Gate Recurrent Spiking Neuron)**, a spiking n
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/GRSN.git
-cd GRSN
+git clone https://github.com/StillWolf/GRSN-SNN.git
+cd GRSN-SNN
 ```
 
 2. Create a conda environment:
@@ -71,13 +72,13 @@ python experiments/train.py \
     --seed 0
 ```
 
-Train an SNN agent with RecurrentLIF:
+Train an SNN agent with GRSN:
 ```bash
 python experiments/train.py \
     --env Pendulum-V-v0 \
     --model_type snn \
-    --snn_type RecurrentLIF \
-    --algo sac \
+    --snn_type GRSN \
+    --algo td3 \
     --seed 0 \
     --save_model
 ```
@@ -97,7 +98,7 @@ python experiments/train.py \
 |----------|-------------|---------|
 | `--env` | Environment name (required) | - |
 | `--model_type` | Model type: `mlp`, `rnn`, `snn` | `rnn` |
-| `--snn_type` | SNN neuron type (for model_type=snn) | `RecurrentLIF` |
+| `--snn_type` | SNN neuron type: `LIF/LIFwoTAP/GRSN/GRSNwoTAP` | `GRSN` |
 | `--encoder` | RNN encoder: `gru`, `lstm` (for model_type=rnn) | `gru` |
 | `--algo` | RL algorithm: `td3`, `sac`, `sacd` | `sac` |
 | `--seed` | Random seed | `0` |
@@ -150,7 +151,7 @@ for seed in 0 1 2 3 4; do
     python experiments/train.py \
         --env Pendulum-V-v0 \
         --model_type snn \
-        --snn_type RecurrentLIF \
+        --snn_type GRSN \
         --algo sac \
         --seed $seed
 done
@@ -162,41 +163,42 @@ done
 # RNN baseline
 python experiments/train.py --env AntBLT-V-v0 --model_type rnn --encoder gru --algo sac --seed 0
 
-# SNN variants
+# SNN variants (all paper-aligned)
 python experiments/train.py --env AntBLT-V-v0 --model_type snn --snn_type LIF --algo sac --seed 0
-python experiments/train.py --env AntBLT-V-v0 --model_type snn --snn_type RecurrentLIF --algo sac --seed 0
+python experiments/train.py --env AntBLT-V-v0 --model_type snn --snn_type LIFwoTAP --algo sac --seed 0
+python experiments/train.py --env AntBLT-V-v0 --model_type snn --snn_type GRSN --algo sac --seed 0
 python experiments/train.py --env AntBLT-V-v0 --model_type snn --snn_type GRSNwoTAP --algo sac --seed 0
 ```
 
 ## Project Structure
 
 ```
-GRSN/
-├── README.md                 # This file
-├── README_CN.md             # Chinese documentation
-├── requirements.txt         # Python dependencies
-├── environments.yml         # Conda environment
+GRSN-SNN/
+├── README.md                # English docs
+├── README_CN.md             # Chinese docs
+├── requirements.txt         # pip deps
+├── environments.yml         # conda env
 │
 ├── grsn/                    # Main Python package
-│   ├── models/             # Neural network models
-│   ├── policies/           # RL policies (RNN, SNN, MLP)
-│   ├── algorithms/         # RL algorithms (TD3, SAC, SACD)
-│   ├── buffers/            # Experience replay buffers
-│   ├── envs/               # Environment definitions
-│   ├── utils/              # Utility functions
-│   └── torchkit/           # PyTorch utilities
+│   ├── policies/
+│   │   ├── rlifs/           # SNN cells: LIF / LIFwoTAP / GRSN / GRSNwoTAP
+│   │   ├── policy_mlp.py
+│   │   ├── policy_rnn.py
+│   │   ├── policy_snn.py
+│   │   ├── spiking_actor.py
+│   │   └── spiking_critic.py
+│   ├── algorithms/          # RL algos (TD3 / SAC / SACD)
+│   │   └── marl/            # MARL placeholder (not implemented — see docs/MARL_EXTENSION.md)
+│   ├── buffers/             # Replay buffers
+│   ├── envs/                # POMDP / Meta-RL / CreditAssign envs
+│   ├── utils/
+│   └── torchkit/
 │
-├── configs/                 # Configuration files
-│   ├── pomdp/              # POMDP experiment configs
-│   ├── meta/               # Meta-RL configs
-│   ├── credit/             # Credit assignment configs
-│   └── ...
-│
-├── experiments/             # Experiment scripts
-│   └── train.py            # Unified training entry point
-│
-├── scripts/                 # Helper scripts
-└── tests/                   # Unit tests
+├── configs/                 # YAML configs (pomdp / meta / credit)
+├── experiments/train.py     # Training entry point
+├── scripts/                 # Batch runners + plotting
+├── tests/                   # Unit tests (pytest)
+└── docs/                    # MARL extension guide + implementation plans
 ```
 
 ## Configuration
@@ -240,7 +242,7 @@ Plot results using:
 import torch
 import matplotlib.pyplot as plt
 
-data = torch.load('results/Pendulum-V-v0/snn_RecurrentLIF_sac_seed0.pth')
+data = torch.load('results/Pendulum-V-v0/GRSN_td3_seed0.pth')
 plt.plot(data['x'], data['y'])
 plt.xlabel('Environment Steps')
 plt.ylabel('Average Return')
@@ -263,6 +265,22 @@ plt.show()
 **Environment not found**
 - Check environment name spelling
 - Ensure environment module is imported: `import grsn.envs.pomdp`
+
+## Key concepts (from the paper)
+
+- **Temporal Alignment Paradigm (TAP)**: instead of running an SNN for `T>1` simulation
+  steps to encode a single MDP state (the conventional rate-coding approach), TAP
+  aligns one SNN step with one MDP step (`T=1`). Spiking neuron state then accumulates
+  across MDP time naturally, and the spike becomes the only per-step output. This
+  is how `LIF` and `GRSN` run in this repo.
+- **Gated Recurrent Spiking Neuron (GRSN)**: adds a gated input-current mechanism
+  where both forget gate `F` and input gate `I` are driven by the *previous spike*
+  `o_{t-1}` (paper Eq. 17). Combined with a learnable leak `β` and soft reset, this
+  equips spiking neurons with GRU-like long-term memory.
+- **External state tensor**: `GRSN` stores gate state `[h, c, spike_prev]` in the
+  caller-managed state tensor (shape `(num_layers, B, 3*hidden_size)`), so the gated
+  recurrence is preserved across `act()` calls during inference. `LIF` only needs
+  `h`, so its state is `(num_layers, B, hidden_size)`.
 
 ## Citation
 

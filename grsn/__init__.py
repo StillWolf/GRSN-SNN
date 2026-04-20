@@ -1,12 +1,15 @@
 """
-GRSN: Gate Recurrent Spiking Neuron for POMDP Reinforcement Learning
+GRSN: Gated Recurrent Spiking Neurons for POMDPs and MARL
 
-This package implements SNN-based RL agents for partially observable environments.
-Based on the ICML 2022 paper on Recurrent Model-Free RL for POMDPs.
+本仓库实现论文 arXiv:2404.15597 (AAAI'25, Qin et al.) 的 POMDP 部分。
+MARL 部分（QMIX + SMAC）未实现，见 docs/MARL_EXTENSION.md。
+
+架构骨架参考：
+- pomdp-baselines (ICML'22, Ni et al.) 的 Separate Recurrent Actor-Critic
+- spikingjelly 的 clock_driven 神经元实现
 """
 
 __version__ = "1.0.0"
-__author__ = "GRSN Team"
 
 __all__ = [
     "Policy_RNN",

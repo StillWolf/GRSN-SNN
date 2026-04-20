@@ -9,7 +9,7 @@ NUM_SEEDS=${2:-5}
 
 # Configuration
 MODELS=("rnn" "snn")
-SNN_TYPES=("LIF" "RecurrentLIF" "GRSNwoTAP")
+SNN_TYPES=("LIF" "LIFwoTAP" "GRSN" "GRSNwoTAP")
 ENCODER="gru"
 ALGO="sac"
 
