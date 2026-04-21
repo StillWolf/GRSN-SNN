@@ -28,35 +28,24 @@ The architectural scaffolding is adapted from [pomdp-baselines](https://github.c
 
 ## Installation
 
-### Prerequisites
+**完整环境配置指南见 [`docs/SETUP.md`](docs/SETUP.md)**——包含 Python 版本要求、conda 创建、pip 兜底、SC2/SMAC 安装、GPU 注意事项、常见问题排查。
 
-- Python 3.8 or higher
-- CUDA-capable GPU (recommended)
+简版 TL;DR：
 
-### Setup
-
-1. Clone the repository:
 ```bash
 git clone https://github.com/StillWolf/GRSN-SNN.git
 cd GRSN-SNN
-```
-
-2. Create a conda environment:
-```bash
 conda env create -f environments.yml
 conda activate grsn
+
+# conda env create 在某些版本会跳过 pip 段，验证 + 兜底
+python -c "import torch, gym, spikingjelly, pycolab" || pip install -r requirements.txt
+
+# 验证：41 个测试应该全部 PASS
+PYTHONPATH=. python -m pytest tests/ -v
 ```
 
-Or install via pip:
-```bash
-pip install -r requirements.txt
-```
-
-3. Install additional dependencies for specific environments:
-```bash
-# For PyBullet environments (Ant, HalfCheetah, etc.)
-pip install pybullet
-```
+实测组合：Python 3.10 + PyTorch 2.4 + gym 0.26.2 + numpy 1.26 + spikingjelly。
 
 ## Quick Start
 

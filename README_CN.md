@@ -28,35 +28,24 @@
 
 ## 安装
 
-### 环境要求
+**完整环境配置指南见 [`docs/SETUP.md`](docs/SETUP.md)**——包含 Python 版本要求、conda 创建、pip 兜底、SC2/SMAC 安装、GPU 注意事项、常见问题排查。
 
-- Python 3.8 或更高版本
-- CUDA-capable GPU (推荐)
+简版 TL;DR：
 
-### 安装步骤
-
-1. 克隆仓库:
 ```bash
 git clone https://github.com/StillWolf/GRSN-SNN.git
 cd GRSN-SNN
-```
-
-2. 创建conda环境:
-```bash
 conda env create -f environments.yml
 conda activate grsn
+
+# conda env create 在某些版本会跳过 pip 段，验证 + 兜底
+python -c "import torch, gym, spikingjelly, pycolab" || pip install -r requirements.txt
+
+# 验证：41 个测试应全部 PASS
+PYTHONPATH=. python -m pytest tests/ -v
 ```
 
-或者使用pip安装:
-```bash
-pip install -r requirements.txt
-```
-
-3. 安装特定环境的额外依赖:
-```bash
-# 对于PyBullet环境 (Ant, HalfCheetah等)
-pip install pybullet
-```
+实测组合：Python 3.10 + PyTorch 2.4 + gym 0.26.2 + numpy 1.26 + spikingjelly。
 
 ## 快速开始
 
